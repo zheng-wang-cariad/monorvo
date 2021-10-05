@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 public class ImportDialog extends Dialog<HashMap<String, Boolean>> {
     private final HashSet<Order> suggested = new HashSet<>();
     public final ObservableList<String> orderIds = FXCollections.observableArrayList();
+    private final EventGUI gui;
 
     private ListView<String> suggestion = new ListView<>(orderIds);
     private TextField input = new TextField();
@@ -30,7 +31,8 @@ public class ImportDialog extends Dialog<HashMap<String, Boolean>> {
     private Button importOrder = new Button("import");
 
 
-    public ImportDialog(EventChain chain, EventManager manager) {
+    public ImportDialog(EventChain chain, EventManager manager, EventGUI gui) {
+        this.gui = gui;
         getSuggestedOrders(chain, manager);
         setupInput(manager);
         var box = new VBox();
@@ -97,11 +99,11 @@ public class ImportDialog extends Dialog<HashMap<String, Boolean>> {
         ButtonType buttonTypeCancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
         this.getDialogPane().getButtonTypes().add(buttonTypeCancel);
 
-        this.setResultConverter(new Callback<ButtonType, HashMap<String, Boolean>>() {
+        this.setResultConverter(new Callback<>() {
             @Override
             public HashMap<String, Boolean> call(ButtonType b) {
                 if (b == buttonTypeOk) {
-                    if(manager.managers.orderManager.hasOrder(input.getText())) {
+                    if (manager.managers.orderManager.hasOrder(input.getText())) {
 
                         orderId = Optional.of(input.getText());
                         importToOrder(chain, manager);
@@ -112,7 +114,7 @@ public class ImportDialog extends Dialog<HashMap<String, Boolean>> {
                         alert.showAndWait();
                         return null;
                     }
-                }else {
+                } else {
                     orderId = Optional.empty();
                     return null;
                 }
@@ -123,22 +125,24 @@ public class ImportDialog extends Dialog<HashMap<String, Boolean>> {
 
     private void importToOrder(EventChain chain, EventManager manager) {
         var result = new HashMap<String, Boolean>();
-        for( Order o : manager.managers.orderManager.getOrders()){
-            if(o.id.equals(this.input.getText())) {
-                for(String str: FileManager.readAllImageFilePath(o.id)) {
-                    result.put(str, true);
-                }
-            }
-        }
-
-        for(Event e: chain.events) {
-            var imported = result.values();
-            for(EventContent c: e.contents) {
-                if(c.type == EventType.IMAGE && !c.content.isBlank() && !imported.contains(c.content)) {
-                    result.put(c.content, false);
-                }
-            }
-        }
+//        for( Order o : manager.managers.orderManager.getOrders()){
+//            if(o.id.equals(this.input.getText())) {
+//                for(String str: FileManager.readAllImageFilePath(o.id)) {
+//                    result.put(str, true);
+//                }
+//            }
+//        }
+//
+//        for(Event e: chain.events) {
+//            var imported = result.values();
+//            for(EventContent c: e.contents) {
+//                if(c.type == EventType.IMAGE && !c.content.isBlank() && !imported.contains(c.content)) {
+//                    result.put(c.content, false);
+//                }
+//            }
+//        }
+        this.gui.allImages.boxes.stream()
+                .forEach(it -> result.put(it.filePath, it.checkbox.isSelected()));
 
         this.output = result;
     }
@@ -160,8 +164,12 @@ public class ImportDialog extends Dialog<HashMap<String, Boolean>> {
 
     private boolean textContainsID(EventChain chain, Order order) {
         for(Event e : chain.events) {
-            if(e.subject.contains(order.id)){
-                return true;
+            try{
+                if(e.subject.contains(order.id)){
+                    return true;
+                }
+            } catch (Exception ex) {
+                return false;
             }
 
             for(EventContent ec: e.contents) {

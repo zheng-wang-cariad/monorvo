@@ -6,10 +6,12 @@ public class EventChainDto {
 	public final long uid;
 	public final List<Long> uids;
 	public final boolean isDeleted;
+	public final boolean isImported;
 	
-	public EventChainDto(long uid, List<Long> uids, boolean isDeleted) {
+	public EventChainDto(long uid, List<Long> uids, boolean isDeleted, boolean isImported) {
 		this.uid = uid;
 		this.uids = uids;
 		this.isDeleted = isDeleted;
+		this.isImported = isImported;
 	}
 }

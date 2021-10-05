@@ -9,7 +9,7 @@ import javafx.stage.Stage;
 public class OrderGUI extends BorderPane {
 
 	private final OrderSelectionBox orderSelectionBox = new OrderSelectionBox(this);
-	private OrderInfo orderInfo;
+	protected OrderInfo orderInfo;
 	private final BatchInfo batchInfo = new BatchInfo(this);
 	private final HBox buttons = new HBox();
 //	private final ListView<OrderHeader> orderList = new ListView<>();

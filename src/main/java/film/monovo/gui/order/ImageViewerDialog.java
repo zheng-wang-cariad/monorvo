@@ -1,30 +1,25 @@
 package film.monovo.gui.order;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.stream.Collectors;
-
-import javax.imageio.ImageIO;
-
 import film.monovo.graphic.FilmStyle;
 import film.monovo.manager.FileManager;
 import film.monovo.manager.order.OrderStatus;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.ScrollPane;
 import javafx.embed.swing.SwingFXUtils;
-import javafx.scene.control.Alert;
+import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
-import javafx.stage.Stage;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ImageViewerDialog extends Dialog<Integer> {
 	public VBox box = new VBox();
@@ -38,14 +33,23 @@ public class ImageViewerDialog extends Dialog<Integer> {
 	public final String orderId;
 	public Button saveAs;
 	public Button save;
+
 	
 	public ImageViewerDialog(String orderId, OrderInfo orderInfo) {
 		this.orderInfo = orderInfo;
 		this.orderId = orderId;
 		
 		var images = FileManager.readAllImage(orderId);
-		images.stream().map( it -> { return new Image(it); })
-			.forEach(it-> { image.add( new ImageViewer(it, this));});
+		var orderImages = new OrderedImages(images);
+		for(String path: orderImages.sortedPath) {
+			try {
+				image.add(new ImageViewer(path, this, orderImages.isSorted));
+			} catch (FileNotFoundException e) {
+				Alert alert = new Alert(AlertType.ERROR);
+				alert.setContentText(e.getMessage());
+				alert.showAndWait();
+			}
+		}
 		for(ImageViewer i: image) {
 			imagesBox.getChildren().add(i);
 		}
@@ -117,7 +121,7 @@ public class ImageViewerDialog extends Dialog<Integer> {
 		Button b = new Button("merge");
 		buttons.getChildren().add(b);
 		b.setOnAction(action -> {
-			var imgs = this.image.stream().map( it -> { return it.originalImage; }).collect(Collectors.toList());
+			var imgs = this.image.stream().map( it -> it.path).collect(Collectors.toList());
 			this.merged = FilmStyle.build(imgs);
 			var imageView = new ImageView(SwingFXUtils.toFXImage(merged, null));
 			this.mergedBuildSp.setContent(imageView);
@@ -159,5 +163,50 @@ public class ImageViewerDialog extends Dialog<Integer> {
 	public void remove(ImageViewer imageViewer) {
 		image.remove(imageViewer);
 		redraw();
+	}
+
+
+	private class OrderedImages {
+		public boolean isSorted;
+		public List<String> sortedPath;
+
+		public OrderedImages(List<String> paths) {
+			try {
+				var indexedPathes = new ArrayList<IndexedPath>();
+				for (String path : paths) {
+					var f = new File(path);
+					var numberInString = f.getName().split("\\.")[0].replaceAll("[^0-9]", "");
+					var orderNumber = Integer.parseInt(numberInString);
+					indexedPathes.add(new IndexedPath(orderNumber, path));
+				}
+				var sorted = indexedPathes.stream().sorted()
+						.map(it -> it.path)
+						.collect(Collectors.toList());
+				this.isSorted = true;
+				this.sortedPath = sorted;
+			} catch(Exception e) {
+				this.isSorted = false;
+				this.sortedPath = paths;
+			}
+		}
+	}
+
+	public class IndexedPath implements Comparable<IndexedPath>{
+		public int orderNumber;
+		public String path;
+
+		public IndexedPath(int orderNumber, String path) {
+			this.orderNumber = orderNumber;
+			this.path = path;
+		}
+
+		public int getOrderNumber() {
+			return orderNumber;
+		}
+
+		@Override
+		public int compareTo(IndexedPath o) {
+			return Integer.compare(this.orderNumber, o.orderNumber);
+		}
 	}
 }

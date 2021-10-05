@@ -1,5 +1,7 @@
 package film.monovo.gui.event;
 
+import film.monovo.manager.event.EventChain;
+import film.monovo.manager.event.EventType;
 import film.monovo.manager.order.Customer;
 import film.monovo.manager.order.Order;
 import film.monovo.manager.order.OrderStatus;
@@ -14,6 +16,11 @@ import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
+import java.io.File;
 
 public class OrderDialog extends Dialog<Order> {
 	private final TextField id = new TextField();
@@ -25,11 +32,15 @@ public class OrderDialog extends Dialog<Order> {
 	private final TextField postCode = new TextField();
 	private final TextField country = new TextField();
 	private final TextField email = new TextField();
+	private final EventGUI gui;
 	private Order order;
 
 	
 	private GridPane grid = new GridPane();
-	public OrderDialog() {
+
+
+	public OrderDialog(EventGUI gui) {
+		this.gui = gui;
 		this.setTitle("Create a new order");
 		this.setResizable(false);
 		
@@ -69,13 +80,13 @@ public class OrderDialog extends Dialog<Order> {
 			}
 		);
 	}
-	
+
 	private void createOrder() {
 		try {
 			if(id.getText().isBlank()) throw new IllegalArgumentException("order id should not be empty");
 			if(name.getText().isBlank()) throw new IllegalArgumentException("customer name should not be empty");
 			if(street.getText().isBlank()) throw new IllegalArgumentException("street should not be empty");
-			if(houseNumber.getText().isBlank()) throw new IllegalArgumentException("houseNumber should not be empty");
+			//if(houseNumber.getText().isBlank()) throw new IllegalArgumentException("houseNumber should not be empty");
 			if(postCode.getText().isBlank()) throw new IllegalArgumentException("post code should not be empty");
 			if(city.getText().isBlank()) throw new IllegalArgumentException("city should not be empty");
 			if(country.getText().isBlank()) throw new IllegalArgumentException("country should not be empty");
@@ -111,6 +122,68 @@ public class OrderDialog extends Dialog<Order> {
 	private void add(Control c, int x, int y, int width) {
 		c.setPrefWidth(width);
 		grid.add(c, x, y);
+	}
+
+	public OrderDialog(EventChain chain, EventGUI gui) {
+		this(gui);
+		if(!chain.event.from.contains("transaction@etsy.com")) return;
+
+		try {
+			Document doc = Jsoup.parse(new File(this.getHtmlPath(chain)), "utf-8");
+			id.setText(this.getOrderId(doc));
+			street.setText(getAddressElement(doc, "first-line"));
+			name.setText(getAddressElement(doc, "name"));
+			city.setText(getAddressElement(doc, "city"));
+			postCode.setText(getAddressElement(doc, "zip"));
+			country.setText(getAddressElement(doc, "country-name"));
+			email.setText(getEmail(doc));
+			this.gui.eventView.updateCurrentEventCreated();
+		} catch(Exception e) {
+			id.setText("");
+			street.setText("");
+			houseNumber.setText("");
+			name.setText("");
+			additional.setText("");
+			city.setText("");
+			postCode.setText("");
+			country.setText("");
+			email.setText("");
+		}
+
+	}
+
+	private String getHtmlPath(EventChain chain){
+		var content = chain.event.contents.stream().filter(it -> it.type == EventType.HTML)
+				.findFirst();
+		if(content.isPresent()) {
+			return content.get().content;
+		}
+		throw new RuntimeException();
+
+	}
+
+	private String getEmail(Document doc) {
+		var elements = doc.select("a:contains(Sende dem Käufer eine E-Mail)");
+		for (Element e: elements) {
+			return e.attr("href").toString().replace("mailto:", "");
+		}
+		throw new RuntimeException();
+	}
+
+	private String getOrderId(Document doc) {
+		var elements = doc.select("div:contains(Bestellnummer:)").select("a[href]");
+		for (Element e: elements) {
+			return e.childNodes().get(0).toString();
+		}
+		throw new RuntimeException();
+	}
+
+	private static String getAddressElement(Document doc, String name) {
+		var elements = doc.getElementsByClass(name);
+		for (Element e: elements) {
+			return e.childNodes().get(0).toString();
+		}
+		return "";
 	}
 	
 }

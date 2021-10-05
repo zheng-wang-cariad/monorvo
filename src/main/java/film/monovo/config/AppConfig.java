@@ -7,7 +7,8 @@ import java.nio.file.Paths;
 import com.google.gson.Gson;
 
 public class AppConfig {
-	public final String configPath = "/Users/kolinsky.hexad/Documents/monovo_storage/meta/config.json";
+	//public final String configPath = "/Users/kolinsky.hexad/Documents/monovo_storage/meta/config.json";
+	public final String configPath = "/Users/kolinsky.hexad/Documents/shop/meta/config.json";
 	public final Gson g = new Gson();
 	public final PathConfig paths;
 	public final EmailConfig emailConfig;

@@ -10,10 +10,16 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+
+import java.awt.*;
+import java.io.File;
 
 public class OrderInfo extends VBox{
 	
@@ -34,7 +40,7 @@ public class OrderInfo extends VBox{
 	private final Button saveOrder = new Button("save");
 	private final Label statusLabel = new Label("");
 	private final Label totalImages = new Label("");
-	private final OrderManager orderManager;
+	protected final OrderManager orderManager;
 	protected final OrderGUI gui;
 	private ComboBox<String> combo;
 	
@@ -86,6 +92,16 @@ public class OrderInfo extends VBox{
 			dialog.showAndWait();
 			gui.updateOrderStatus(order);
 		});
+		Button viewDirectory = new Button("View Directory");
+		viewDirectory.setOnAction(b -> {
+			try {
+				Desktop.getDesktop().open(new File(FileManager.getImageFolder(order.id)));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		});
+		box.getChildren().add(viewDirectory);
+		box.setSpacing(4);
 		return box;
 	}
 	

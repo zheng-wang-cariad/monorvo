@@ -1,9 +1,12 @@
 package film.monovo.gui.order;
 
 import film.monovo.graphic.FilmMerger;
+import film.monovo.graphic.Paper;
 import film.monovo.graphic.Resolution;
 import film.monovo.manager.FileManager;
 import film.monovo.manager.order.Order;
+import film.monovo.manager.order.OrderStatus;
+import film.monovo.util.IconButton;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -37,15 +40,25 @@ public class BatchInfo extends VBox {
     }
 
     private void initButtons() {
-        var merge = new Button("build");
-        var clear = new Button("clear");
+        var merge = new Button();
+        IconButton.setIconOrText(merge, "classpath:draw.jpg", "build");
+
+        var merge1 = new Button();
+        IconButton.setIconOrText(merge1, "classpath:build1.png", "build1");
+
+        var clear = new Button();
+        IconButton.setIconOrText(clear, "classpath:clear.png", "clear");
+
+        buttons.setSpacing(5);
+        
 
         buttons.getChildren().add(merge);
+        buttons.getChildren().add(merge1);
         buttons.getChildren().add(clear);
 
-        merge.setOnAction(action -> {
+        merge1.setOnAction(action -> {
             var order = batch.stream().map (it -> it.order ).collect(Collectors.toList());
-            FilmMerger merger = new FilmMerger(order);
+            FilmMerger merger = new FilmMerger(order, Paper.A3);
             if(merger.filePath.isPresent()) {
                 try {
                     Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -53,8 +66,9 @@ public class BatchInfo extends VBox {
                     var image = new Image(input);
                     var view = new ImageView(image);
                     var sp = new ScrollPane(view);
+                    sp.setPrefWidth(1200);
                     alert.getDialogPane().setContent(sp);
-                    alert.setWidth(1000);
+                    alert.setWidth(1200);
                     alert.setHeight(800);
                     ButtonType save = new ButtonType("save");
                     ButtonType cancel = new ButtonType("cancel");
@@ -66,6 +80,45 @@ public class BatchInfo extends VBox {
                         c.getExtensionFilters().add(new FileChooser.ExtensionFilter("picture doc(*.jpg)", "*.jpg"));
                         File selectedFile = c.showSaveDialog(this.stage);
                         new File (merger.filePath.get()).renameTo(selectedFile);
+                        for(OrderHeader o : batch) {
+                            o.setOrderStatus(OrderStatus.PRINTED);
+                        }
+                    } else if (result.get() == cancel) {
+                        //DO NOTHING
+                    }
+                }catch(Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        merge.setOnAction(action -> {
+            var order = batch.stream().map (it -> it.order ).collect(Collectors.toList());
+            FilmMerger merger = new FilmMerger(order, Paper.A3PLUS);
+            if(merger.filePath.isPresent()) {
+                try {
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                    var input = new FileInputStream(merger.filePath.get());
+                    var image = new Image(input);
+                    var view = new ImageView(image);
+                    var sp = new ScrollPane(view);
+                    sp.setPrefWidth(1200);
+                    alert.getDialogPane().setContent(sp);
+                    alert.setWidth(1200);
+                    alert.setHeight(800);
+                    ButtonType save = new ButtonType("save");
+                    ButtonType cancel = new ButtonType("cancel");
+                    alert.getButtonTypes().setAll(save, cancel);
+
+                    Optional<ButtonType> result = alert.showAndWait();
+                    if (result.get() == save){
+                        FileChooser c = new FileChooser();
+                        c.getExtensionFilters().add(new FileChooser.ExtensionFilter("picture doc(*.jpg)", "*.jpg"));
+                        File selectedFile = c.showSaveDialog(this.stage);
+                        new File (merger.filePath.get()).renameTo(selectedFile);
+                        for(OrderHeader o : batch) {
+                            o.setOrderStatus(OrderStatus.PRINTED);
+                        }
                     } else if (result.get() == cancel) {
                         //DO NOTHING
                     }
@@ -79,6 +132,7 @@ public class BatchInfo extends VBox {
         clear.setOnAction(action -> {
             this.getChildren().clear();
             this.getChildren().add(total);
+            this.images.forEach((OrderHeader o, BufferedImage b) -> o.check.setSelected(false));
             this.images.clear();
             this.batch.clear();
         });
@@ -127,7 +181,8 @@ public class BatchInfo extends VBox {
         this.images.put(orderHeader, image);
         box.getChildren().add(new Label("Size: " + Resolution.toMillimeter(image.getWidth()) +
                 "mm x " + Resolution.toMillimeter(image.getHeight()) + "mm"));
-        var button = new Button("remove");
+        var button = new Button();
+        IconButton.setIconOrText(button, "classpath:remove.png", "remove",15);
         box.getChildren().add(button);
         button.setOnAction(action -> {
             orderHeader.check.setSelected(false);

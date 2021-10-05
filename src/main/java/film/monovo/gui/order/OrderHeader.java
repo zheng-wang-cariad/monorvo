@@ -35,6 +35,11 @@ public class OrderHeader extends HBox{
 		});
 	}
 
+	public void setOrderStatus(OrderStatus status) {
+		gui.orderInfo.orderManager.updateOrderStatus(this.order, status);
+		gui.updateOrderStatus(this.order);
+	}
+
 	public Long getTimestamp() { return this.order.timestamp; }
 
 	public void setTheCheckBox(){

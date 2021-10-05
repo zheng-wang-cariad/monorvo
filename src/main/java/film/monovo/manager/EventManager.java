@@ -13,7 +13,7 @@ import javafx.scene.layout.BorderPane;
 public class EventManager {
 	public final RootManager managers;
 	public final BorderPane pane = new BorderPane();
-	private final EventGUI gui;
+	protected final EventGUI gui;
 	private final HashMap<Long, Event> events;
 	private HashMap<String, EventChain> chains = new HashMap<String, EventChain>();
 
@@ -24,12 +24,29 @@ public class EventManager {
 		chains = readAllChains();
 		this.gui = new EventGUI(this);
 	}
-	
-	public List<EventChain> refreshFolder() {
-		var newInboxEvents = managers.emailManager.refreshFolder(EmailFolder.INBOX);
-		var newSpamEvents = managers.emailManager.refreshFolder(EmailFolder.Spam);
-		injectToEventChains(newInboxEvents);
-		injectToEventChains(newSpamEvents);
+
+	public List<EventChain> getAllEventChains() {
+		return new ArrayList<>(this.chains.values());
+	}
+
+	public void injectNewEvents(List<Event> newEvents) {
+		injectToEventChains(newEvents);
+		this.gui.updateEventList();
+	}
+
+	public void injectNewEventsWithoutUpdate(List<Event> newEvents) {
+		injectToEventChains(newEvents);
+	}
+
+	public List<EventChain> getSortedEventChain() {
+//		var newInboxEvents = managers.emailManager.refreshFolder(EmailFolder.INBOX);
+//
+//		injectToEventChains(newInboxEvents);
+//		if(!managers.config.emailConfig.inboundHost.contains("gmail")) {
+//			var newSpamEvents = managers.emailManager.refreshFolder(EmailFolder.Spam);
+//			injectToEventChains(newSpamEvents);
+//		}
+
 		ArrayList<EventChain> toSort = new ArrayList<>(chains.values());
 		toSort.sort((a, b) -> {
 			var c = a.lastUpdated - b.lastUpdated;
@@ -60,16 +77,13 @@ public class EventManager {
 		var chainsDtos = FileManager.readAllEventChainDtos().stream();
 		chainsDtos.forEach(dto -> {
 			var chain = toChain(dto);
-			if(chain.event.uid == 61) {
-				System.out.println(1);
-			}
 			map.put(chain.event.threadId, chain);
 		});
 		return map;
 	}
 	
 	private EventChain toChain(EventChainDto dto) {
-		return new EventChain(events.get(dto.uid), dto.uids.stream().map(uid->events.get(uid)).collect(Collectors.toList()), dto.isDeleted);
+		return new EventChain(events.get(dto.uid), dto.uids.stream().map(uid->events.get(uid)).collect(Collectors.toList()), dto.isDeleted, dto.isImported);
 	}
 
 	public void enrich(EventChain chain){
@@ -81,7 +95,7 @@ public class EventManager {
 		
 		if(event.enriched) return;
 		try {
-			System.out.println("persist event" + event.getNormalizedUid());
+			System.out.println("persist event" + event.getNormalizedUid() + " " + event.from);
 			event.contents = this.managers.emailManager.readContents(event);
 			event.enriched = true;
 			FileManager.persistEvent(event);

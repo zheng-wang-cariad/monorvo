@@ -11,6 +11,7 @@ public class EventChain {
 	public final ArrayList<Event> events;
 	public Long lastUpdated;
 	public boolean isDeleted;
+	public boolean isImported;
 	
 	public EventChain(Event event) {
 		this.event = event;
@@ -21,11 +22,12 @@ public class EventChain {
 		FileManager.persistChain(toDto(this));
 	}
 	
-	public EventChain(Event event, List<Event> events, boolean isDeleted) {
+	public EventChain(Event event, List<Event> events, boolean isDeleted, boolean isImported) {
 		this.event = event;
 		this.events = new ArrayList<>();
 		this.events.addAll(events);
 		this.isDeleted = isDeleted;
+		this.isImported = isImported;
 		long time = 0;
 		for(Event e : events) {
 			if(e.timestamp > time) time = e.timestamp;
@@ -41,10 +43,23 @@ public class EventChain {
 	}
 	
 	private EventChainDto toDto(EventChain chain) {
-		return new EventChainDto(chain.event.getNormalizedUid(), chain.events.stream().map (e -> e.getNormalizedUid()).collect(Collectors.toList()), chain.isDeleted);
+		return new EventChainDto(chain.event.getNormalizedUid(), chain.events.stream().map (Event::getNormalizedUid).collect(Collectors.toList()), chain.isDeleted, chain.isImported);
 	}
 
 	public EventChainDto toDto() {
 		return toDto(this);
+	}
+
+	public boolean containsStr(String str) {
+		for(Event event: this.events) {
+			if(event.subject.contains(str)) return true;
+			if(event.from.contains(str)) return true;
+			for(EventContent content: event.contents) {
+				if(content.type == EventType.TXT) {
+					if(content.content.contains(str)) return true;
+				}
+			}
+		}
+		return false;
 	}
 }

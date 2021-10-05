@@ -1,10 +1,7 @@
 package film.monovo.manager;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
@@ -106,8 +103,10 @@ public class FileManager {
 			}
 	}
 
-	public static String persistImage(String fileName, byte[] bytes) {
-		var file = config.paths.tempImageFileFolder + fileName;
+	public static String persistImage(String fileName, byte[] bytes, long uid) {
+		var folder = config.paths.tempImageFileFolder + File.separator + uid + File.separator;
+		var file = folder + fileName;
+		ensureFolder(folder);
 		ensureFile(file);
 		try (FileOutputStream fos = new FileOutputStream(file)){
 			fos.write(bytes);
@@ -115,6 +114,15 @@ public class FileManager {
 			e.printStackTrace();
 		}
 		return file;
+	}
+
+	private static void ensureFolder(String folder) {
+		new File(folder).mkdirs();
+	}
+
+	public static boolean isImageExist(String fileName, long uid) {
+		var file = config.paths.tempImageFileFolder + File.separator + uid + File.separator + fileName;
+		return new File(file).exists();
 	}
 
 	public static String persistImage(String fileName, BufferedImage image) throws IOException {
@@ -170,7 +178,7 @@ public class FileManager {
 			int numberOfImage = 0;
 			File f = new File(directoryPath);
 			for(File fileEntry: f.listFiles()) {
-				if (fileEntry.isFile() && !fileEntry.getName().equals("merged.jpg") && fileEntry.getName().endsWith("jpg")) {
+				if (isCustomerFile(fileEntry)) {
 					numberOfImage ++;
 				}
 			}
@@ -180,21 +188,25 @@ public class FileManager {
 		}
 	}
 
-	public static List<FileInputStream> readAllImage(String id) {
-		var directoryPath = String.format(config.paths.orderFolderFormatterString, id);
+	public static String getImageFolder(String id) {
+		return String.format(config.paths.orderFolderFormatterString, id);
+	}
+
+	public static List<String> readAllImage(String id) {
+		var directoryPath = getImageFolder(id);
 		File f = new File(directoryPath);
-		var list = new ArrayList<FileInputStream>();
+		var list = new ArrayList<String>();
+
 		for(File fileEntry: f.listFiles()) {
-			if (fileEntry.isFile() && !fileEntry.getName().equals("merged.jpg") && fileEntry.getName().endsWith("jpg")) {
+			if (isCustomerFile(fileEntry)) {
 				try {
-					list.add(new FileInputStream(fileEntry.getAbsolutePath()));
+					list.add(fileEntry.getAbsolutePath());
 				}catch(Exception e) {
 					e.printStackTrace();
 				}
 			}
 		}
 		return list;
-
 	}
 
 	public static String getMergedFilePath(String orderId) {
@@ -206,7 +218,7 @@ public class FileManager {
 		File f = new File(directoryPath);
 		var list = new ArrayList<String>();
 		for(File fileEntry: f.listFiles()) {
-			if (fileEntry.isFile() && !fileEntry.getName().equals("merged.jpg") && fileEntry.getName().endsWith("jpg")) {
+			if (isCustomerFile(fileEntry)) {
 				try {
 					list.add(fileEntry.getName());
 				}catch(Exception e) {
@@ -216,15 +228,50 @@ public class FileManager {
 		}
 		return list;
 	}
+	
+	private static boolean isCustomerFile(File file) {
+		var fileName = file.getName().toLowerCase();
+		return file.isFile() && ! fileName.equals("merged.jpg") && (fileName.endsWith("jpeg") || fileName.endsWith("jpg") || fileName.endsWith("png"));
+	}
 
 	public static void copyTempImageFileToOrderFolder(String orderId, String fileName) {
 		var origin = new File(fileName);
 		var orderFile = String.format(config.paths.orderFolderFormatterString, orderId) + origin.getName();
-		var targetFile = ensureFile(orderFile);
+		var targetFile = ensureFile(orderFile.toLowerCase());
 		try {
 			Files.copy(origin.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+
+	public static String createZipSubFolder(String folderName) {
+		var path = config.paths.tempImageFileFolder + folderName;
+		File folder = new File(path);
+		folder.mkdir();
+		return folder.getAbsolutePath();
+	}
+
+	public static InputStream persistZipFile(byte[] bytes, String destDir, long uid) {
+		File zipFile = ensureFile(destDir + File.separator + uid + "_" + UUID.randomUUID().toString() + ".zip");
+		try (FileOutputStream fos = new FileOutputStream(zipFile)){
+			fos.write(bytes);
+			return new ByteArrayInputStream(bytes);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public static void cleanChainFolder(long uid) {
+		var filename = config.paths.tempImageFileFolder + File.separator + uid + File.separator;
+		var file = new File(filename);
+		if(!file.exists()) return;
+		for (File f : file.listFiles()) {
+			if(f.getName().endsWith("jpg") || f.getName().endsWith("png")) {
+				if (!f.getName().equals("merged.jpg")) {
+					f.delete();
+				}
+			}
 		}
 	}
 }
