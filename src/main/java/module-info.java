@@ -11,8 +11,8 @@ module film.monovo {
 	requires javafx.swing;
     requires jsoup;
     requires barcode4j;
-    exports film.monovo;
-    exports film.monovo.config;
-	exports film.monovo.manager.event;
-	exports film.monovo.manager.order;
+    exports film.monorvo;
+    exports film.monorvo.config;
+	exports film.monorvo.manager.event;
+	exports film.monorvo.manager.order;
 }

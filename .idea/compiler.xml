@@ -6,11 +6,11 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="monovo" />
+        <module name="monorvo" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="monovo" target="11" />
+      <module name="monorvo" target="11" />
     </bytecodeTargetLevel>
   </component>
 </project>

@@ -3,7 +3,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>film</groupId>
-	<artifactId>monovo</artifactId>
+	<artifactId>monorvo</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -110,7 +110,7 @@
 					<execution>
 						<id>default-cli</id>
 						<configuration>
-							<mainClass>film.monovo.App</mainClass>
+							<mainClass>film.monorvo.App</mainClass>
 						</configuration>
 					</execution>
 					<execution>
@@ -119,7 +119,7 @@
 							<options>
 								<option>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</option>
 							</options>
-							<mainClass>film.monovo.App</mainClass>
+							<mainClass>film.monorvo.App</mainClass>
 						</configuration>
 					</execution>
 				</executions>
