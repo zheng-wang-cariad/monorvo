@@ -165,8 +165,11 @@ public class ImageViewerDialog extends Dialog<Integer> {
 		redraw();
 	}
 
+    public void adjustOrder(ImageViewer imageViewer) {
+    }
 
-	private class OrderedImages {
+
+    private class OrderedImages {
 		public boolean isSorted;
 		public List<String> sortedPath;
 

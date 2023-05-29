@@ -6,8 +6,7 @@ import javax.mail.Folder;
 import javax.mail.Session;
 import java.util.function.Function;
 
-public class PDFReader {
-//	private final AppConfig appConfig = new AppConfig();
+public class EmailReader {
 	private final EmailConfig config = new EmailConfig("imaps", "imap.gmail.com","monorvo.shipping@gmail.com", "Snbzwgh33");
 	private final Boolean enableDebug = false;
 	

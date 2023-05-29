@@ -1,29 +1,20 @@
 package film.monorvo.gui.event;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-
+import film.monorvo.graphic.JPGRotator;
 import film.monorvo.manager.FileManager;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.Border;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.BorderWidths;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 
-import javax.imageio.ImageIO;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 
 public class ImageSelectionBox extends VBox{
-	
+	public int index = -1;
 	public final String filePath;
 	public final CheckBox checkbox = new CheckBox();
 	private final Button rotateL = new Button("<");
@@ -73,24 +64,8 @@ public class ImageSelectionBox extends VBox{
 
 	private void rotate(String filePath, boolean b) {
 		try {
-			var input = ImageIO.read(new File(filePath));
-			var height = input.getHeight();
-			var width = input.getWidth();
-			var target = new BufferedImage(input.getHeight(), input.getWidth(), input.getType());
-			var graphics2D = target.createGraphics();
-			double theta;
-			if (b) {
-				theta = (Math.PI * 2) / 4;
-				graphics2D.translate((height - width) / 2, (height - width) / 2);
-			} else {
-				theta = (Math.PI * 2) * 3 / 4;
-				graphics2D.translate((width - height) / 2, (width - height) / 2);
-			}
-			graphics2D.rotate(theta, ((double) height) / 2, ((double) width) / 2);
-			graphics2D.drawRenderedImage(input, null);
-			ImageIO.write(target, "jpg", new File(filePath));
+			JPGRotator.rotate(filePath, b);
 			loadImageToBox(filePath);
-
 		}catch(Exception e) {
 			e.printStackTrace();
 		}
